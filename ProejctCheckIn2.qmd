@@ -1,0 +1,287 @@
+---
+title: "ProjectCheckIn2"
+format: pdf
+editor: visual
+---
+#in top right Git tab: pull, edit, commit, push.
+```{r}
+token <- "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"
+```
+
+##NFL data
+```{r}
+library(tidyverse)
+library(nflreadr)
+
+# Pick one season first
+season_year <- 2013:2023 #seasons end at 2023 because merging contract data with other sports from recent seasons gets tricky with, depending on the sport; updated salaries, useable API's abd packages for getting data, and all sports have comfortable and reliable data through 2023. This range also gives us a full decade of data.
+
+nfl_stats <- load_player_stats(               #player stats
+  seasons = season_year,
+  summary_level = "reg"
+)
+nfl_contracts <- load_contracts() #contract data
+
+```
+#filtering and cleaning NFL stats data and creating the metric for player evals
+```{r}
+
+#turn pasing epa, rushing epa, and receiving epa, into just EPA
+nfl_perf <- nfl_stats %>%
+  filter(position %in% c("QB", "RB", "WR", "TE")) %>%
+  mutate(
+    raw_performance = coalesce(passing_epa, 0) +         #coalesce creates a 0 instead of NA for non passers
+      coalesce(rushing_epa, 0) +
+      coalesce(receiving_epa, 0)
+  ) %>%
+  select(
+    player_id,
+    player = player_display_name,
+    season,
+    team = recent_team,
+    position,
+    games,
+    raw_performance
+  )
+
+```
+
+#now clena and filter nfl contract data
+```{r}
+nfl_salary <- nfl_contracts %>%
+  filter(!is.na(gsis_id)) %>%       #take only players with valid IDs or it will be hard to merge
+  group_by(gsis_id) %>%             #group contracts of the same player to avoid repeates
+  slice_max(apy, n = 1, with_ties = FALSE) %>% #keeps only the largest salay for each player, renegotiations and rookie deals otherwies effect the data and the highest value often is more representative of how a team values a player
+  ungroup() %>%
+  transmute(
+    player_id = gsis_id,             #transmute to change var names
+    salary = apy,
+    team_contract = team
+  )
+
+```
+#join nfl contracts and player stats
+```{r}
+nfl_all_with_salary <- nfl_stats %>%
+  left_join(nfl_salary, by = "player_id")
+```
+#Final cleaning and adding salary share and team payroll variables
+```{r}
+nfl_all_with_payroll <- nfl_all_with_salary %>%
+  filter(!is.na(salary)) %>%                         #remove missing slaries
+  group_by(season, recent_team) %>%
+  mutate(
+    team_payroll = sum(salary, na.rm = TRUE)         #create team payroll before removing non-skill position players so when we create the salary_share variable later, it is representative of their share of the whole teams salary, nt jsut skill position
+  ) %>%
+  ungroup()
+
+nfl_cleaned <- nfl_all_with_payroll %>%
+  filter(position %in% c("QB", "RB", "WR", "TE")) %>% #filtering to skill positions because EPA is more directly attributable to them as opposed ot kickers of offensive linemen
+  mutate(
+    raw_performance =
+      coalesce(passing_epa, 0) +
+      coalesce(rushing_epa, 0) +
+      coalesce(receiving_epa, 0),
+    salary_share = salary / team_payroll,
+    league = "NFL",
+    performance_metric = "Total Offensive EPA"
+  ) %>%
+  select(
+    league,
+    player_id,
+    player = player_display_name,
+    season,
+    team = recent_team,
+    position,
+    games,
+    raw_performance,
+    salary,
+    team_payroll,
+    salary_share,
+    performance_metric
+  )
+```
+
+
+##Baseall data
+```{r}
+library(baseballr)
+
+seasons <- 2013:2023 #create our range of season data we are using
+
+mlb_batting_raw <- map_dfr(seasons, function(year) {   #repeated the function for each season
+  fg_bat_leaders(                                      #the actual function that pulls batter data for the selected season
+    startseason = year,
+    endseason = year
+  )
+})
+
+mlb_pitching_raw <- map_dfr(seasons, function(year) {  #same for pitchers
+  fg_pitch_leaders(
+    startseason = year,
+    endseason = year
+  )
+})
+```
+
+#Clean data and change variable names to match NFL data
+```{r}
+mlb_batting_clean <- mlb_batting_raw %>%        #mlb data will have duplicates because players get raded midseason 
+  transmute(
+    player_id = playerid,
+    player = PlayerName,
+    season = Season,
+    team = team_name,
+    position_group = "Batter",
+    raw_performance = WAR,
+    performance_metric = "WAR"
+  )
+
+mlb_pitching_clean <- mlb_pitching_raw %>%
+  transmute(
+    player_id = playerid,
+    player = PlayerName,
+    season = Season,
+    team = team_name,
+    position_group = "Pitcher",
+    raw_performance = WAR,
+    performance_metric = "WAR"
+  )
+
+mlb_clean <- bind_rows(
+  mlb_batting_clean,
+  mlb_pitching_clean
+) %>%
+  group_by(player_id, player, season) %>%        #not including team in the grouping because otherwise players who got traded mid seasons would have multiple observations for each team they played for within the same year. This way our observational unit stay as one player season, combining their war totals from all teams in a given year which keeps it similar to the nfl data.
+  summarize(
+    raw_performance = sum(raw_performance, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    league = "MLB",
+    performance_metric = "WAR"
+  )
+
+mlb_clean %>%
+  count(player_id, season) %>%
+  filter(n > 1)
+```
+
+#MLB Salary Data (Kaggle)
+```{r}
+library(tidyverse)
+library(rvest)
+library(janitor)
+
+mlb_salary_data <- read_csv("~/Desktop/STAT-470-Spring-2026-VZ/Final Project/mlb_salary_data.csv")
+```
+
+#Cleaning salary data
+```{r}
+mlb_salary <- mlb_salary_data %>%
+  filter(Year >= 2013, Year <= 2023) %>% #Filter to selected years
+  transmute( #adjust variable names
+    season = Year,
+    team = Team,
+    player = Name,
+    salary = parse_number(Salary)     #removing commas and dollar sign, converting to simple integer
+  )
+```
+
+#Creating salary share for MLB
+
+```{r}
+mlb_salary <- mlb_salary %>%
+  group_by(season, team) %>%
+  mutate(
+    team_payroll = sum(salary, na.rm = TRUE),
+    salary_share = salary / team_payroll
+  ) %>%
+  ungroup()
+```
+
+#Combining MLB stats and salaries
+
+```{r}
+mlb_clean %>%
+  select(player) %>%
+  slice(1:20)
+
+mlb_salary %>%
+  select(player) %>%
+  slice(1:20)
+```
+#Ensuring all player names are in the same format my removing accent marks 
+```{r}
+library(stringi)
+
+mlb_clean <- mlb_clean %>%
+  mutate(
+    player_clean = stri_trans_general(player, "Latin-ASCII")
+  )
+
+mlb_salary <- mlb_salary %>%
+  mutate(
+    player_clean = stri_trans_general(player, "Latin-ASCII")
+  )
+```
+#Joining
+
+```{r}
+mlb_joined <- mlb_clean %>%
+  left_join(
+    mlb_salary,
+    by = c("player_clean" = "player_clean", "season" = "season")
+  )
+
+#check quality
+mlb_joined %>%             #initially missing salary data for players whom we have stats for for roughly 5,000 observations. This is because our stats data includes every single player who appeared where the salary data is slightly less reliable, likely not giving us certain fringe players or players who only played a couple games or most likely, minor league contracts. 
+  summarize(
+    total_players = n(),
+    matched_salary = sum(!is.na(salary)),
+    missing_salary = sum(is.na(salary))
+  )
+
+mlb_joined <- mlb_joined %>%     #Removing all players with unmatched salary and statistical data leaves us with just over 10,000 observations and still a clear picture of salary efficiency. 
+  filter(!is.na(salary))
+```
+
+#Make final MLB data set and remove duplicate player column
+
+```{r}
+mlb_cleaned <- mlb_joined %>%
+  select(
+    player_id,
+    player = player.x,
+    season,
+    team,
+    raw_performance,
+    league,
+    performance_metric,
+    salary,
+    team_payroll,
+    salary_share
+  )
+
+#duplicates check
+mlb_cleaned %>%
+  count(player_id, season) %>%
+  filter(n > 1)
+
+#still duplicates
+mlb_cleaned %>%
+  filter(player_id == 494, season == 2019)
+#since WAR is the same but the salary is differing we can filter by the first observation for the higher salary
+mlb_cleaned <- mlb_cleaned %>%
+  group_by(player_id, player, season) %>%
+  summarize(
+    team = first(team),
+    raw_performance = first(raw_performance),
+    league = first(league),
+    performance_metric = first(performance_metric),
+    salary = sum(salary, na.rm = TRUE),
+    team_payroll = first(team_payroll),
+    salary_share = salary / team_payroll,
+    .groups = "drop"
+  )
+```
