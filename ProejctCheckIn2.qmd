@@ -285,3 +285,209 @@ mlb_cleaned <- mlb_cleaned %>%
     .groups = "drop"
   )
 ```
+
+#NBA data (basketball reference) 
+```{r}
+#Scraping basketball reference for each season in our range of years
+library(tidyverse)
+library(rvest)
+library(janitor)
+
+nba_2013_raw <- read_html("https://www.basketball-reference.com/leagues/NBA_2013_advanced.html") %>%
+  html_table(fill = TRUE)
+
+nba_2014_raw <- read_html("https://www.basketball-reference.com/leagues/NBA_2014_advanced.html") %>%
+  html_table(fill = TRUE)
+
+nba_2015_raw <- read_html("https://www.basketball-reference.com/leagues/NBA_2015_advanced.html") %>%
+  html_table(fill = TRUE)
+
+nba_2016_raw <- read_html("https://www.basketball-reference.com/leagues/NBA_2016_advanced.html") %>%
+  html_table(fill = TRUE)
+
+nba_2017_raw <- read_html("https://www.basketball-reference.com/leagues/NBA_2017_advanced.html") %>%
+  html_table(fill = TRUE)
+
+nba_2018_raw <- read_html("https://www.basketball-reference.com/leagues/NBA_2018_advanced.html") %>%
+  html_table(fill = TRUE)
+
+nba_2019_raw <- read_html("https://www.basketball-reference.com/leagues/NBA_2019_advanced.html") %>%
+  html_table(fill = TRUE)
+
+nba_2020_raw <- read_html("https://www.basketball-reference.com/leagues/NBA_2020_advanced.html") %>%
+  html_table(fill = TRUE)
+
+nba_2021_raw <- read_html("https://www.basketball-reference.com/leagues/NBA_2021_advanced.html") %>%
+  html_table(fill = TRUE)
+
+nba_2022_raw <- read_html("https://www.basketball-reference.com/leagues/NBA_2022_advanced.html") %>%
+  html_table(fill = TRUE)
+
+nba_2023_raw <- read_html("https://www.basketball-reference.com/leagues/NBA_2023_advanced.html") %>%
+  html_table(fill = TRUE)
+
+#Cleaning each year
+nba_2013_clean <- nba_2013_raw[[1]] %>%
+  clean_names() %>%
+  filter(player != "Player") %>%
+  transmute(player, season = 2013, team, position = pos, games = as.numeric(g),
+            raw_performance = as.numeric(ws), league = "NBA", performance_metric = "Win Shares")
+
+nba_2014_clean <- nba_2014_raw[[1]] %>%
+  clean_names() %>%
+  filter(player != "Player") %>%
+  transmute(player, season = 2014, team, position = pos, games = as.numeric(g),
+            raw_performance = as.numeric(ws), league = "NBA", performance_metric = "Win Shares")
+
+nba_2015_clean <- nba_2015_raw[[1]] %>%
+  clean_names() %>%
+  filter(player != "Player") %>%
+  transmute(player, season = 2015, team, position = pos, games = as.numeric(g),
+            raw_performance = as.numeric(ws), league = "NBA", performance_metric = "Win Shares")
+
+nba_2016_clean <- nba_2016_raw[[1]] %>%
+  clean_names() %>%
+  filter(player != "Player") %>%
+  transmute(player, season = 2016, team, position = pos, games = as.numeric(g),
+            raw_performance = as.numeric(ws), league = "NBA", performance_metric = "Win Shares")
+
+nba_2017_clean <- nba_2017_raw[[1]] %>%
+  clean_names() %>%
+  filter(player != "Player") %>%
+  transmute(player, season = 2017, team, position = pos, games = as.numeric(g),
+            raw_performance = as.numeric(ws), league = "NBA", performance_metric = "Win Shares")
+
+nba_2018_clean <- nba_2018_raw[[1]] %>%
+  clean_names() %>%
+  filter(player != "Player") %>%
+  transmute(player, season = 2018, team, position = pos, games = as.numeric(g),
+            raw_performance = as.numeric(ws), league = "NBA", performance_metric = "Win Shares")
+
+nba_2019_clean <- nba_2019_raw[[1]] %>%
+  clean_names() %>%
+  filter(player != "Player") %>%
+  transmute(player, season = 2019, team, position = pos, games = as.numeric(g),
+            raw_performance = as.numeric(ws), league = "NBA", performance_metric = "Win Shares")
+
+nba_2020_clean <- nba_2020_raw[[1]] %>%
+  clean_names() %>%
+  filter(player != "Player") %>%
+  transmute(player, season = 2020, team, position = pos, games = as.numeric(g),
+            raw_performance = as.numeric(ws), league = "NBA", performance_metric = "Win Shares")
+
+nba_2021_clean <- nba_2021_raw[[1]] %>%
+  clean_names() %>%
+  filter(player != "Player") %>%
+  transmute(player, season = 2021, team, position = pos, games = as.numeric(g),
+            raw_performance = as.numeric(ws), league = "NBA", performance_metric = "Win Shares")
+
+nba_2022_clean <- nba_2022_raw[[1]] %>%
+  clean_names() %>%
+  filter(player != "Player") %>%
+  transmute(player, season = 2022, team, position = pos, games = as.numeric(g),
+            raw_performance = as.numeric(ws), league = "NBA", performance_metric = "Win Shares")
+
+nba_2023_clean <- nba_2023_raw[[1]] %>%
+  clean_names() %>%
+  filter(player != "Player") %>%
+  transmute(player, season = 2023, team, position = pos, games = as.numeric(g),
+            raw_performance = as.numeric(ws), league = "NBA", performance_metric = "Win Shares")
+```
+#Combine all the years together
+```{r}
+nba_clean <- bind_rows(
+  nba_2013_clean,
+  nba_2014_clean,
+  nba_2015_clean,
+  nba_2016_clean,
+  nba_2017_clean,
+  nba_2018_clean,
+  nba_2019_clean,
+  nba_2020_clean,
+  nba_2021_clean,
+  nba_2022_clean,
+  nba_2023_clean
+)
+
+nba_clean <- nba_clean %>%
+  group_by(player, season) %>%
+  filter(
+    team %in% c("2TM", "3TM", "4TM") | n() == 1            # for players who played for multiple teams, remove team specific observations and keep the data for their season totals across teams.
+  ) %>%
+  ungroup()
+
+#check for dupes
+nba_clean %>%
+  count(player, season) %>%
+  filter(n > 1)
+```
+
+#nba salary data (kaggle data set)
+```{r}
+library(readr)
+NBA_salary_data <- read_csv("~/Desktop/STAT-470-Spring-2026-VZ/Final Project/NBA_salary_data.csv")
+View(NBA_salary_data)
+
+#filtering
+nba_salary <- NBA_salary_data %>%
+  filter(Year >= 2013, Year <= 2023) %>%
+  transmute(
+    player = Player,
+    season = Year,
+    team = Team,
+    salary = Salary
+  )
+
+#create salary share variable
+nba_salary <- nba_salary %>%
+  group_by(season, team) %>%
+  mutate(
+    team_payroll = sum(salary, na.rm = TRUE),
+    salary_share = salary / team_payroll
+  ) %>%
+  ungroup()
+
+#same cleaning and joining as MLB data 
+library(stringi)
+
+nba_clean <- nba_clean %>%
+  mutate(player_clean = stri_trans_general(player, "Latin-ASCII"))
+
+nba_salary <- nba_salary %>%
+  mutate(player_clean = stri_trans_general(player, "Latin-ASCII"))
+
+nba_joined <- nba_clean %>%
+  left_join(
+    nba_salary,
+    by = c("player_clean", "season")
+  )
+
+#checking match rate
+nba_joined %>%
+  summarize(
+    total_players = n(),
+    matched_salary = sum(!is.na(salary)),
+    missing_salary = sum(is.na(salary))
+  )
+
+#remove duplicate columns for player names and team names that came from both daat sets
+nba_cleaned <- nba_joined %>%
+  filter(!is.na(salary)) %>%
+  select(
+    player = player.x,
+    season,
+    team = team.x,
+    position,
+    games,
+    raw_performance,
+    league,
+    performance_metric,
+    salary,
+    team_payroll,
+    salary_share
+  )
+#check duplicates
+nba_cleaned %>%
+  count(player, season) %>%
+  filter(n > 1)
+```
