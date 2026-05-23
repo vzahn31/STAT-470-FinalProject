@@ -491,3 +491,151 @@ nba_cleaned %>%
   count(player, season) %>%
   filter(n > 1)
 ```
+#NHL data from hockey reference
+```{r}
+# NHL performance data pulled teh same way as nba
+
+library(tidyverse)
+library(rvest)
+library(janitor)
+
+# Pull each year separately
+nhl_2013_raw <- read_html("https://www.hockey-reference.com/leagues/NHL_2013_skaters.html") %>%
+  html_table(fill = TRUE)
+
+nhl_2014_raw <- read_html("https://www.hockey-reference.com/leagues/NHL_2014_skaters.html") %>%
+  html_table(fill = TRUE)
+
+nhl_2015_raw <- read_html("https://www.hockey-reference.com/leagues/NHL_2015_skaters.html") %>%
+  html_table(fill = TRUE)
+
+nhl_2016_raw <- read_html("https://www.hockey-reference.com/leagues/NHL_2016_skaters.html") %>%
+  html_table(fill = TRUE)
+
+nhl_2017_raw <- read_html("https://www.hockey-reference.com/leagues/NHL_2017_skaters.html") %>%
+  html_table(fill = TRUE)
+
+nhl_2018_raw <- read_html("https://www.hockey-reference.com/leagues/NHL_2018_skaters.html") %>%
+  html_table(fill = TRUE)
+
+nhl_2019_raw <- read_html("https://www.hockey-reference.com/leagues/NHL_2019_skaters.html") %>%
+  html_table(fill = TRUE)
+
+nhl_2020_raw <- read_html("https://www.hockey-reference.com/leagues/NHL_2020_skaters.html") %>%
+  html_table(fill = TRUE)
+
+nhl_2021_raw <- read_html("https://www.hockey-reference.com/leagues/NHL_2021_skaters.html") %>%
+  html_table(fill = TRUE)
+
+nhl_2022_raw <- read_html("https://www.hockey-reference.com/leagues/NHL_2022_skaters.html") %>%
+  html_table(fill = TRUE)
+
+nhl_2023_raw <- read_html("https://www.hockey-reference.com/leagues/NHL_2023_skaters.html") %>%
+  html_table(fill = TRUE)
+
+
+# Clean each year
+
+nhl_2013_clean <- nhl_2013_raw[[1]] %>%    #pull first table
+  clean_names() %>%        #clean names
+  filter(x_2 != "Player") %>%       #remove repeated header rows
+  transmute(player = x_2, season = 2013, team = x_4, position = x_5,
+            games = as.numeric(x_6), raw_performance = as.numeric(scoring_3),
+            league = "NHL", performance_metric = "Points")
+
+nhl_2014_clean <- nhl_2014_raw[[1]] %>%
+  clean_names() %>%
+  filter(x_2 != "Player") %>%
+  transmute(player = x_2, season = 2014, team = x_4, position = x_5,
+            games = as.numeric(x_6), raw_performance = as.numeric(scoring_3),
+            league = "NHL", performance_metric = "Points")
+
+nhl_2015_clean <- nhl_2015_raw[[1]] %>%
+  clean_names() %>%
+  filter(x_2 != "Player") %>%
+  transmute(player = x_2, season = 2015, team = x_4, position = x_5,
+            games = as.numeric(x_6), raw_performance = as.numeric(scoring_3),
+            league = "NHL", performance_metric = "Points")
+
+nhl_2016_clean <- nhl_2016_raw[[1]] %>%
+  clean_names() %>%
+  filter(x_2 != "Player") %>%
+  transmute(player = x_2, season = 2016, team = x_4, position = x_5,
+            games = as.numeric(x_6), raw_performance = as.numeric(scoring_3),
+            league = "NHL", performance_metric = "Points")
+
+nhl_2017_clean <- nhl_2017_raw[[1]] %>%
+  clean_names() %>%
+  filter(x_2 != "Player") %>%
+  transmute(player = x_2, season = 2017, team = x_4, position = x_5,
+            games = as.numeric(x_6), raw_performance = as.numeric(scoring_3),
+            league = "NHL", performance_metric = "Points")
+
+nhl_2018_clean <- nhl_2018_raw[[1]] %>%
+  clean_names() %>%
+  filter(x_2 != "Player") %>%
+  transmute(player = x_2, season = 2018, team = x_4, position = x_5,
+            games = as.numeric(x_6), raw_performance = as.numeric(scoring_3),
+            league = "NHL", performance_metric = "Points")
+
+nhl_2019_clean <- nhl_2019_raw[[1]] %>%
+  clean_names() %>%
+  filter(x_2 != "Player") %>%
+  transmute(player = x_2, season = 2019, team = x_4, position = x_5,
+            games = as.numeric(x_6), raw_performance = as.numeric(scoring_3),
+            league = "NHL", performance_metric = "Points")
+
+nhl_2020_clean <- nhl_2020_raw[[1]] %>%
+  clean_names() %>%
+  filter(x_2 != "Player") %>%
+  transmute(player = x_2, season = 2020, team = x_4, position = x_5,
+            games = as.numeric(x_6), raw_performance = as.numeric(scoring_3),
+            league = "NHL", performance_metric = "Points")
+
+nhl_2021_clean <- nhl_2021_raw[[1]] %>%
+  clean_names() %>%
+  filter(x_2 != "Player") %>%
+  transmute(player = x_2, season = 2021, team = x_4, position = x_5,
+            games = as.numeric(x_6), raw_performance = as.numeric(scoring_3),
+            league = "NHL", performance_metric = "Points")
+
+nhl_2022_clean <- nhl_2022_raw[[1]] %>%
+  clean_names() %>%
+  filter(x_2 != "Player") %>%
+  transmute(player = x_2, season = 2022, team = x_4, position = x_5,
+            games = as.numeric(x_6), raw_performance = as.numeric(scoring_3),
+            league = "NHL", performance_metric = "Points")
+
+nhl_2023_clean <- nhl_2023_raw[[1]] %>%
+  clean_names() %>%
+  filter(x_2 != "Player") %>%
+  transmute(player = x_2, season = 2023, team = x_4, position = x_5,
+            games = as.numeric(x_6), raw_performance = as.numeric(scoring_3),
+            league = "NHL", performance_metric = "Points")
+
+# Combine all years
+nhl_clean <- bind_rows(
+  nhl_2013_clean,
+  nhl_2014_clean,
+  nhl_2015_clean,
+  nhl_2016_clean,
+  nhl_2017_clean,
+  nhl_2018_clean,
+  nhl_2019_clean,
+  nhl_2020_clean,
+  nhl_2021_clean,
+  nhl_2022_clean,
+  nhl_2023_clean
+)
+
+#Adjust for players who played for multiple teams to only take their total season stast
+nhl_clean <- nhl_clean %>%
+  group_by(player, season) %>%
+  filter(team == "TOT" | n() == 1) %>%
+  ungroup()
+```
+
+
+#NHL salary data 
+
+```
