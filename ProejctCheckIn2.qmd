@@ -3,12 +3,11 @@ title: "ProjectCheckIn2"
 format: pdf
 editor: visual
 ---
+
 #in top right Git tab: pull, edit, commit, push.
-```{r}
-token <- "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"
-```
 
 ##NFL data
+
 ```{r}
 library(tidyverse)
 library(nflreadr)
@@ -23,7 +22,9 @@ nfl_stats <- load_player_stats(               #player stats
 nfl_contracts <- load_contracts() #contract data
 
 ```
+
 #filtering and cleaning NFL stats data and creating the metric for player evals
+
 ```{r}
 
 #turn pasing epa, rushing epa, and receiving epa, into just EPA
@@ -47,6 +48,7 @@ nfl_perf <- nfl_stats %>%
 ```
 
 #now clena and filter nfl contract data
+
 ```{r}
 nfl_salary <- nfl_contracts %>%
   filter(!is.na(gsis_id)) %>%       #take only players with valid IDs or it will be hard to merge
@@ -60,12 +62,16 @@ nfl_salary <- nfl_contracts %>%
   )
 
 ```
+
 #join nfl contracts and player stats
+
 ```{r}
 nfl_all_with_salary <- nfl_stats %>%
   left_join(nfl_salary, by = "player_id")
 ```
+
 #Final cleaning and adding salary share and team payroll variables
+
 ```{r}
 nfl_all_with_payroll <- nfl_all_with_salary %>%
   filter(!is.na(salary)) %>%                         #remove missing slaries
@@ -102,8 +108,8 @@ nfl_cleaned <- nfl_all_with_payroll %>%
   )
 ```
 
-
 ##Baseall data
+
 ```{r}
 library(baseballr)
 
@@ -125,6 +131,7 @@ mlb_pitching_raw <- map_dfr(seasons, function(year) {  #same for pitchers
 ```
 
 #Clean data and change variable names to match NFL data
+
 ```{r}
 mlb_batting_clean <- mlb_batting_raw %>%        #mlb data will have duplicates because players get raded midseason 
   transmute(
@@ -168,15 +175,17 @@ mlb_clean %>%
 ```
 
 #MLB Salary Data (Kaggle)
+
 ```{r}
 library(tidyverse)
 library(rvest)
 library(janitor)
 
-mlb_salary_data <- read_csv("~/Desktop/STAT-470-Spring-2026-VZ/Final Project/mlb_salary_data.csv")
+mlb_salary_data <- read_csv("mlb_salary_data.csv")
 ```
 
 #Cleaning salary data
+
 ```{r}
 mlb_salary <- mlb_salary_data %>%
   filter(Year >= 2013, Year <= 2023) %>% #Filter to selected years
@@ -211,7 +220,9 @@ mlb_salary %>%
   select(player) %>%
   slice(1:20)
 ```
-#Ensuring all player names are in the same format my removing accent marks 
+
+#Ensuring all player names are in the same format my removing accent marks
+
 ```{r}
 library(stringi)
 
@@ -225,6 +236,7 @@ mlb_salary <- mlb_salary %>%
     player_clean = stri_trans_general(player, "Latin-ASCII")
   )
 ```
+
 #Joining
 
 ```{r}
@@ -286,7 +298,8 @@ mlb_cleaned <- mlb_cleaned %>%
   )
 ```
 
-#NBA data (basketball reference) 
+#NBA data (basketball reference)
+
 ```{r}
 #Scraping basketball reference for each season in our range of years
 library(tidyverse)
@@ -393,7 +406,9 @@ nba_2023_clean <- nba_2023_raw[[1]] %>%
   transmute(player, season = 2023, team, position = pos, games = as.numeric(g),
             raw_performance = as.numeric(ws), league = "NBA", performance_metric = "Win Shares")
 ```
+
 #Combine all the years together
+
 ```{r}
 nba_clean <- bind_rows(
   nba_2013_clean,
@@ -423,9 +438,10 @@ nba_clean %>%
 ```
 
 #nba salary data (kaggle data set)
+
 ```{r}
 library(readr)
-NBA_salary_data <- read_csv("~/Desktop/STAT-470-Spring-2026-VZ/Final Project/NBA_salary_data.csv")
+NBA_salary_data <- read_csv("NBA_salary_data.csv")
 View(NBA_salary_data)
 
 #filtering
@@ -491,7 +507,9 @@ nba_cleaned %>%
   count(player, season) %>%
   filter(n > 1)
 ```
+
 #NHL data from hockey reference
+
 ```{r}
 # NHL performance data pulled teh same way as nba
 
@@ -635,7 +653,6 @@ nhl_clean <- nhl_clean %>%
   ungroup()
 ```
 
+#NHL salary data
 
-#NHL salary data 
-
-```
+\`\`\`
