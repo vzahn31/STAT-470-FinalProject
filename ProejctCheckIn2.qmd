@@ -660,49 +660,90 @@ nhl_clean <- nhl_clean %>%
 # NFL Visual
 
 ```{r}
+nfl_cleaned <- nfl_cleaned %>%
+  group_by(season) %>%
+  mutate(avg_season_salary = mean(salary, na.rm = TRUE)) %>%
+  ungroup() %>%
+  mutate(
+    max_avg = max(avg_season_salary),
+    salary_adj = salary * (max_avg / avg_season_salary)
+  )
+
+
 nfl_cleaned %>%
-  filter(!is.na(raw_performance), salary > 0) %>%
-  ggplot(aes(x = salary, y = raw_performance)) +
-  geom_point(alpha = 0.2, color = "#378ADD") +
-  geom_smooth(method = "lm", color = "black") +
+  filter(!is.na(raw_performance), salary > 1) %>%   
+  mutate(salary_m = salary_adj) %>%
+  ggplot(aes(x = salary_m, y = raw_performance, color = position)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth(method = "lm", color = "black", se = TRUE) +
+  facet_wrap(~position, scales = "free") +
+  scale_color_manual(values = c(QB="#378ADD", RB="#BA7517", WR="#639922", TE="#9B59B6"),
+                     guide = "none") +
   labs(
-    title = "NFL: salary vs. total offensive EPA (2013–2023)",
-    x = "Salary ($M)",
-    y = "Total offensive EPA"
+    title   = "NFL: Inflation-Adjusted Salary vs. Total Offensive EPA by Position",
+    subtitle = "(2013–2023)",
+    x       = "Inflation-Adjusted Salary (in millions $)",
+    y       = "Total Offensive EPA"
   ) +
-  theme_minimal()
+  theme_minimal() +
+  theme(panel.grid.minor = element_blank())
 ```
 
 # MLB Visual
 
 ```{r}
+mlb_cleaned <- mlb_cleaned %>%
+  group_by(season) %>%
+  mutate(avg_season_salary = mean(salary, na.rm = TRUE)) %>%
+  ungroup() %>%
+  mutate(
+    max_avg = max(avg_season_salary),
+    salary_adj = salary * (max_avg / avg_season_salary) / 1000000  
+  )
+
+
 mlb_cleaned %>%
-  filter(!is.na(raw_performance), salary > 0) %>%
-  mutate(salary_m = salary / 1000000) %>%
-  ggplot(aes(x = salary_m, y = raw_performance)) +
+  filter(!is.na(raw_performance), salary > 500000) %>%
+  ggplot(aes(x = salary_adj, y = raw_performance)) +
   geom_point(alpha = 0.2, color = "#BA7517") +
-  geom_smooth(method = "lm", color = "black") +
+  geom_smooth(method = "lm", color = "black", se = TRUE) +
   labs(
-    title = "MLB: salary vs. WAR (2013–2023)",
-    x = "Salary ($M)",
-    y = "WAR"
+    title = "MLB: Inflation-Adjusted Salary vs. WAR (2013–2023)",
+    subtitle = "(2013–2023)",
+    x     = "Inflation-Adjusted Salary ($M, 2023 dollars)",
+    y     = "WAR"
   ) +
-  theme_minimal()
+  theme_minimal() +
+  theme(panel.grid.minor = element_blank())
 ```
 
 # NBA Visual
 
 ```{r}
+nba_cleaned <- nba_cleaned %>%
+  group_by(season) %>%
+  mutate(avg_season_salary = mean(salary, na.rm = TRUE)) %>%
+  ungroup() %>%
+  mutate(
+    max_avg = max(avg_season_salary),
+    salary_adj = salary * (max_avg / avg_season_salary) / 1000000
+  )
+
+
 nba_cleaned %>%
-  filter(!is.na(raw_performance), salary > 0) %>%
-  mutate(salary_m = salary / 1000000) %>%
-  ggplot(aes(x = salary_m, y = raw_performance)) +
+  filter(!is.na(raw_performance), salary > 1300000) %>%
+  ggplot(aes(x = salary_adj, y = raw_performance)) +
   geom_point(alpha = 0.2, color = "#639922") +
-  geom_smooth(method = "lm", color = "black") +
+  geom_smooth(method = "lm", color = "black", se = TRUE) +
   labs(
-    title = "NBA: salary vs. win shares (2013–2023)",
-    x = "Salary ($M)",
-    y = "Win shares"
+    title = "NBA: Inflation-Adjusted Salary vs. Win Shares (2013–2023)",
+    subtitle = "(2013–2023)",
+    x     = "Inflation-Adjusted Salary ($M, 2023 dollars)",
+    y     = "Win Shares"
   ) +
-  theme_minimal()
+  theme_minimal() +
+  theme(panel.grid.minor = element_blank())
+
 ```
+
+
