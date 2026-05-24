@@ -682,7 +682,7 @@ nfl_cleaned %>%
   labs(
     title   = "NFL: Inflation-Adjusted Salary vs. Total Offensive EPA by Position",
     subtitle = "(2013–2023)",
-    x       = "Inflation-Adjusted Salary (in millions $)",
+    x       = "Inflation-Adjusted Salary (In Millions $)",
     y       = "Total Offensive EPA"
   ) +
   theme_minimal() +
@@ -708,9 +708,9 @@ mlb_cleaned %>%
   geom_point(alpha = 0.2, color = "#BA7517") +
   geom_smooth(method = "lm", color = "black", se = TRUE) +
   labs(
-    title = "MLB: Inflation-Adjusted Salary vs. WAR (2013–2023)",
+    title = "MLB: Inflation-Adjusted Salary vs. WAR",
     subtitle = "(2013–2023)",
-    x     = "Inflation-Adjusted Salary ($M, 2023 dollars)",
+    x     = "Inflation-Adjusted Salary (In Millions $)",
     y     = "WAR"
   ) +
   theme_minimal() +
@@ -736,14 +736,104 @@ nba_cleaned %>%
   geom_point(alpha = 0.2, color = "#639922") +
   geom_smooth(method = "lm", color = "black", se = TRUE) +
   labs(
-    title = "NBA: Inflation-Adjusted Salary vs. Win Shares (2013–2023)",
+    title = "NBA: Inflation-Adjusted Salary vs. Win Shares",
     subtitle = "(2013–2023)",
-    x     = "Inflation-Adjusted Salary ($M, 2023 dollars)",
+    x     = "Inflation-Adjusted Salary (In Millions $)",
     y     = "Win Shares"
   ) +
   theme_minimal() +
   theme(panel.grid.minor = element_blank())
 
+```
+
+# Combined Data
+
+```{r}
+combined <- bind_rows(
+  nfl_cleaned %>% 
+    mutate(salary = salary * 1000000) %>% 
+    select(-player_id),
+  mlb_cleaned %>% 
+    select(-player_id),
+  nba_cleaned
+)
+
+
+combined <- combined %>%
+  group_by(league, season) %>%
+  mutate(
+    perf_z = (raw_performance - mean(raw_performance, na.rm = TRUE)) /
+              sd(raw_performance, na.rm = TRUE)
+  ) %>%
+  ungroup()
+
+combined %>%
+  filter(!is.na(perf_z), salary > 500000) %>%
+  mutate(salary_adj_m = salary_adj ) %>%
+  ggplot(aes(x = salary_adj_m, y = perf_z, color = league)) +
+  geom_point(alpha = 0.15) +
+  geom_smooth(method = "lm", color = "black", se = TRUE) +
+  facet_wrap(~league, scales = "free_x") +
+  scale_color_manual(values = c(NFL = "#378ADD", MLB = "#BA7517", NBA = "#639922"),
+                     guide = "none") +
+  labs(
+    title    = "Salary vs. Standardized Performance Across Sports",
+    subtitle = "Performance z-scored within league and season (2013-2023)",
+    x        = "Inflation-Adjusted Salary (In Millions $)",
+    y        = "Performance z-score"
+  ) +
+  theme_minimal() +
+  theme(panel.grid.minor = element_blank(),
+        plot.subtitle = element_text(color = "gray40", size = 10))
+```
+
+```{r}
+combined <- combined %>%
+  group_by(league) %>%
+  mutate(
+    expected_z      = predict(lm(perf_z ~ salary_adj, data = cur_data())),
+    residual        = perf_z - expected_z,
+    salary_quartile = ntile(salary_adj, 4),
+    quartile_label  = factor(salary_quartile,
+                             levels = 1:4,
+                             labels = c("Q1\n(lowest 25%)", "Q2", "Q3", "Q4\n(top 25%)"))
+  ) %>%
+  ungroup()
+
+combined %>%
+  filter(!is.na(residual)) %>%
+  group_by(league, quartile_label) %>%
+  summarize(
+    avg_residual = mean(residual, na.rm = TRUE),
+    se           = sd(residual, na.rm = TRUE) / sqrt(n()),
+    .groups      = "drop"
+  ) %>%
+  ggplot(aes(x = quartile_label, y = avg_residual, fill = league)) +
+  geom_col(position = position_dodge(width = 0.75), width = 0.65) +
+  geom_errorbar(
+    aes(ymin = avg_residual - 1.96 * se,
+        ymax = avg_residual + 1.96 * se),
+    position = position_dodge(width = 0.75),
+    width = 0.2, linewidth = 0.5, color = "gray30"
+  ) +
+  geom_hline(yintercept = 0, linewidth = 0.5) +
+  scale_fill_manual(values = c(NFL = "#378ADD", MLB = "#BA7517", NBA = "#639922"),
+                    name = NULL) +
+  labs(
+    title    = "Do High Earners Deliver?",
+    subtitle = "Average Residual by Salary Quartile",
+    x        = "Salary quartile (within league)",
+    y        = "Average residual (z-score units)",
+    caption  = "Error bars = 95% confidence intervals."
+  ) +
+  theme_minimal() +
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor   = element_blank(),
+    legend.position    = "top",
+    plot.subtitle      = element_text(color = "gray40", size = 10),
+    plot.caption       = element_text(color = "gray50", size = 8)
+  )
 ```
 
 
