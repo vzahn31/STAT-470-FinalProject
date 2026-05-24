@@ -653,6 +653,56 @@ nhl_clean <- nhl_clean %>%
   ungroup()
 ```
 
-#NHL salary data
+# NHL salary data
 
 \`\`\`
+
+# NFL Visual
+
+```{r}
+nfl_cleaned %>%
+  filter(!is.na(raw_performance), salary > 0) %>%
+  ggplot(aes(x = salary, y = raw_performance)) +
+  geom_point(alpha = 0.2, color = "#378ADD") +
+  geom_smooth(method = "lm", color = "black") +
+  labs(
+    title = "NFL: salary vs. total offensive EPA (2013–2023)",
+    x = "Salary ($M)",
+    y = "Total offensive EPA"
+  ) +
+  theme_minimal()
+```
+
+# MLB Visual
+
+```{r}
+mlb_cleaned %>%
+  filter(!is.na(raw_performance), salary > 0) %>%
+  mutate(salary_m = salary / 1000000) %>%
+  ggplot(aes(x = salary_m, y = raw_performance)) +
+  geom_point(alpha = 0.2, color = "#BA7517") +
+  geom_smooth(method = "lm", color = "black") +
+  labs(
+    title = "MLB: salary vs. WAR (2013–2023)",
+    x = "Salary ($M)",
+    y = "WAR"
+  ) +
+  theme_minimal()
+```
+
+# NBA Visual
+
+```{r}
+nba_cleaned %>%
+  filter(!is.na(raw_performance), salary > 0) %>%
+  mutate(salary_m = salary / 1000000) %>%
+  ggplot(aes(x = salary_m, y = raw_performance)) +
+  geom_point(alpha = 0.2, color = "#639922") +
+  geom_smooth(method = "lm", color = "black") +
+  labs(
+    title = "NBA: salary vs. win shares (2013–2023)",
+    x = "Salary ($M)",
+    y = "Win shares"
+  ) +
+  theme_minimal()
+```
