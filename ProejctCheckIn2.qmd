@@ -836,4 +836,47 @@ combined %>%
   )
 ```
 
+```{r}
+combined %>%
+  filter(!is.na(perf_z), salary_share > 0.03) %>%
+  ggplot(aes(x = salary_share, y = perf_z, color = league)) +
+  geom_point(alpha = 0.15) +
+  geom_smooth(method = "lm", color = "black", se = TRUE) +
+  facet_wrap(~league, scales = "fixed") +
+  scale_color_manual(values = c(NFL = "#378ADD", MLB = "#BA7517", NBA = "#639922"),
+                     guide = "none") +
+  scale_x_continuous(labels = scales::percent_format(accuracy = 1)) +
+  labs(
+    title    = "Salary Share vs. Standardized Performance Across Sports",
+    subtitle = "Performance z-scored within league and season (2013–2023)",
+    x        = "Player Salary as Share of Team Payroll",
+    y        = "Performance z-score"
+  ) +
+  theme_minimal() +
+  theme(panel.grid.minor = element_blank(),
+        plot.subtitle = element_text(color = "gray40", size = 10))
+
+```
+
+# Summary Table
+
+```{r}
+library(knitr)
+
+combined %>%
+  filter(!is.na(perf_z), salary > 500000) %>%
+  group_by(league) %>%
+  summarize(
+    N                  = n(),
+    `Mean Salary Share`    = scales::percent(mean(salary_share, na.rm = TRUE), accuracy = 0.1),
+    `Median Salary Share`  = scales::percent(median(salary_share, na.rm = TRUE), accuracy = 0.1),
+    `Mean Performance (z)` = round(mean(perf_z, na.rm = TRUE), 3),
+    `SD Performance (z)`   = round(sd(perf_z, na.rm = TRUE), 3),
+    `Median Performance (z)` = round(median(perf_z, na.rm = TRUE), 3),
+    .groups = "drop"
+  ) %>%
+  kable(caption = "Summary Statistics by League (2013–2023)",
+        align = c("l", rep("r", 6)))
+
+```
 
