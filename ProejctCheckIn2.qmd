@@ -675,7 +675,7 @@ combined %>%
 combined <- combined %>%
   group_by(league) %>%
   mutate(
-    expected_z      = predict(lm(perf_z ~ salary_adj, data = cur_data())),
+    expected_z      = predict(lm(perf_z ~ relative_salary_share, data = cur_data())),
     residual        = perf_z - expected_z,
     salary_quartile = ntile(salary_share, 4),
     quartile_label  = factor(salary_quartile,
@@ -705,8 +705,8 @@ combined %>%
                     name = NULL) +
   labs(
     title    = "Do High Earners Deliver?",
-    subtitle = "Average Residual by Salary Quartile",
-    x        = "Salary quartile (within league)",
+    subtitle = "Average Residual by Relative Salary Quartile",
+    x        = "Relative Salary quartile (within league)",
     y        = "Average residual (z-score units)",
     caption  = "Error bars = 95% confidence intervals."
   ) +
@@ -723,7 +723,7 @@ combined %>%
 ```{r}
 combined %>%
   filter(!is.na(perf_z), relative_salary_share > 0.03) %>%
-  ggplot(aes(x = salary_share, y = perf_z, color = league)) +
+  ggplot(aes(x = relative_salary_share, y = perf_z, color = league)) +
   geom_point(alpha = 0.15) +
   geom_smooth(method = "lm", color = "black", se = TRUE) +
   facet_wrap(~league, scales = "fixed") +
@@ -731,9 +731,9 @@ combined %>%
                      guide = "none") +
   scale_x_continuous(labels = scales::percent_format(accuracy = 1)) +
   labs(
-    title    = "Salary Share vs. Standardized Performance Across Sports",
-    subtitle = "Performance z-scored within league and season (2013–2023)",
-    x        = "Player Salary Relative to Equal Share",
+    title    = "Relative Salary Share vs. Standardized Performance Across Sports",
+    subtitle = "Relative salary share compares payroll share to expectations assuming an equal share (2013-2023)",
+    x        = "Relative Salary Share",
     y        = "Performance z-score"
   ) +
   theme_minimal() +
