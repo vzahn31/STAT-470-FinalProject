@@ -442,7 +442,6 @@ nba_clean %>%
 ```{r}
 library(readr)
 NBA_salary_data <- read_csv("NBA_salary_data.csv")
-View(NBA_salary_data)
 
 #filtering
 nba_salary <- NBA_salary_data %>%
@@ -618,6 +617,18 @@ combined <- combined %>%
   ) %>%
   ungroup()
 
+roster_sizes <- tibble(
+  league = c("MLB", "NBA", "NFL"),
+  roster_size = c(26, 15, 53)
+)
+
+combined <- combined %>%
+  left_join(roster_sizes, by = "league") %>%
+  mutate(
+    expected_share = 1 / roster_size,
+    relative_salary_share = salary_share / expected_share
+  )
+
 combined %>%
   filter(!is.na(perf_z), salary > 500000) %>%
   mutate(salary_adj_m = salary_adj ) %>%
@@ -644,7 +655,7 @@ combined <- combined %>%
   mutate(
     expected_z      = predict(lm(perf_z ~ salary_adj, data = cur_data())),
     residual        = perf_z - expected_z,
-    salary_quartile = ntile(salary_adj, 4),
+    salary_quartile = ntile(salary_share, 4),
     quartile_label  = factor(salary_quartile,
                              levels = 1:4,
                              labels = c("Q1\n(lowest 25%)", "Q2", "Q3", "Q4\n(top 25%)"))
@@ -689,7 +700,7 @@ combined %>%
 
 ```{r}
 combined %>%
-  filter(!is.na(perf_z), salary_share > 0.03) %>%
+  filter(!is.na(perf_z), relative_salary_share > 0.03) %>%
   ggplot(aes(x = salary_share, y = perf_z, color = league)) +
   geom_point(alpha = 0.15) +
   geom_smooth(method = "lm", color = "black", se = TRUE) +
@@ -700,7 +711,7 @@ combined %>%
   labs(
     title    = "Salary Share vs. Standardized Performance Across Sports",
     subtitle = "Performance z-scored within league and season (2013–2023)",
-    x        = "Player Salary as Share of Team Payroll",
+    x        = "Player Salary Relative to Equal Share",
     y        = "Performance z-score"
   ) +
   theme_minimal() +
@@ -729,5 +740,23 @@ combined %>%
   kable(caption = "Summary Statistics by League (2013–2023)",
         align = c("l", rep("r", 6)))
 
+```
+
+# Mixed Effects Model
+
+```{r}
+library(lme4)
+model_mlb <- lmer(perf_z ~ relative_salary_share + (1 | player) + (1 | season),
+                  data = combined %>% filter(league == "MLB"))
+
+model_nba <- lmer(perf_z ~ relative_salary_share + (1 | player) + (1 | season),
+                  data = combined %>% filter(league == "NBA"))
+
+model_nfl <- lmer(perf_z ~ relative_salary_share + (1 | player) + (1 | season),
+                  data = combined %>% filter(league == "NFL"))
+
+summary(model_mlb)
+summary(model_nba)
+summary(model_nfl)
 ```
 
