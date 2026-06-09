@@ -508,6 +508,14 @@ nba_cleaned %>%
 # NFL Visual
 
 ```{r}
+#adding relative salary share (not in plot, just data set)
+# NFL
+nfl_cleaned <- nfl_cleaned %>%
+  mutate(
+    expected_share = 1 / 53,
+    relative_salary_share = salary_share / expected_share
+  )
+
 nfl_cleaned <- nfl_cleaned %>%
   group_by(season) %>%
   mutate(avg_season_salary = mean(salary, na.rm = TRUE)) %>%
@@ -521,7 +529,7 @@ nfl_cleaned <- nfl_cleaned %>%
 nfl_cleaned %>%
   filter(!is.na(raw_performance), salary > 1) %>%   
   mutate(salary_m = salary_adj) %>%
-  ggplot(aes(x = salary_m, y = raw_performance, color = position)) +
+  ggplot(aes(x = salary_adj, y = raw_performance, color = position)) +
   geom_point(alpha = 0.2) +
   geom_smooth(method = "lm", color = "black", se = TRUE) +
   facet_wrap(~position, scales = "free") +
@@ -540,6 +548,14 @@ nfl_cleaned %>%
 # MLB Visual
 
 ```{r}
+#adding relative salary share (not in plot)
+# MLB
+mlb_cleaned <- mlb_cleaned %>%
+  mutate(
+    expected_share = 1 / 26,
+    relative_salary_share = salary_share / expected_share
+  )
+
 mlb_cleaned <- mlb_cleaned %>%
   group_by(season) %>%
   mutate(avg_season_salary = mean(salary, na.rm = TRUE)) %>%
@@ -568,6 +584,14 @@ mlb_cleaned %>%
 # NBA Visual
 
 ```{r}
+#adding relative salary share (not in plot)
+# NBA
+nba_cleaned <- nba_cleaned %>%
+  mutate(
+    expected_share = 1 / 15,
+    relative_salary_share = salary_share / expected_share
+  )
+
 nba_cleaned <- nba_cleaned %>%
   group_by(season) %>%
   mutate(avg_season_salary = mean(salary, na.rm = TRUE)) %>%
