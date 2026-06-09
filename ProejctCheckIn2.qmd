@@ -781,6 +781,54 @@ model_nfl <- lmer(perf_z ~ relative_salary_share + (1 | player) + (1 | season),
 summary(model_mlb)
 summary(model_nba)
 summary(model_nfl)
+
+library(broom.mixed)
+library(dplyr)
+library(knitr)
+
+mixed_table <- bind_rows(
+  tidy(model_mlb, effects = "fixed") %>% mutate(League = "MLB"),
+  tidy(model_nba, effects = "fixed") %>% mutate(League = "NBA"),
+  tidy(model_nfl, effects = "fixed") %>% mutate(League = "NFL")
+) %>%
+  filter(term == "relative_salary_share") %>%
+  mutate(
+    N = c(nobs(model_mlb), nobs(model_nba), nobs(model_nfl)),
+    Players = c(
+      n_distinct(combined$player[combined$league == "MLB"]),
+      n_distinct(combined$player[combined$league == "NBA"]),
+      n_distinct(combined$player[combined$league == "NFL"])
+    ),
+    Estimate = round(estimate, 3),
+    SE = round(std.error, 3),
+    `t-value` = round(statistic, 2),
+    `p-value` = ifelse(p.value < 0.001, "<0.001", round(p.value, 3))
+  ) %>%
+  select(
+    League,
+    N,
+    Players,
+    Term = term,
+    Estimate,
+    SE,
+    `t-value`,
+    `p-value`
+  )
+
+kable(
+  mixed_table,
+  caption = "Table 3. Mixed-Effects Model Results by League",
+  col.names = c(
+    "League",
+    "N",
+    "Players",
+    "Predictor",
+    "Estimate",
+    "SE",
+    "t-value",
+    "p-value"
+  )
+)
 ```
 #Interaction Model
 ```{r}
@@ -790,5 +838,6 @@ interaction_model <- lm(
 )
 
 summary(interaction_model)
+
 
 ```
