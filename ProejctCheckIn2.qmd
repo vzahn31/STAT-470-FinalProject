@@ -740,36 +740,6 @@ combined %>%
 
 ```
 
-<<<<<<< HEAD
-# Build Models
-
-```{r}
-library(lme4)
-library(lmerTest)  # gives you p-values on the fixed effects
-library(broom.mixed)
-
-# Random intercept for team accounts for the fact that players on the same team share a payroll denominator 
-# Random intercept for season accounts for year to year market changes
-
-mlb_mixed <- lmer(
-  perf_z ~ salary_share + (1 | team),
-  data = filter(combined, league == "MLB")
-)
-
-nba_mixed <- lmer(
-  perf_z ~ salary_share + (1 | team),
-  data = filter(combined, league == "NBA")
-)
-
-nfl_mixed <- lmer(
-  perf_z ~ salary_share + (1 | team),
-  data = filter(combined, league == "NFL")
-)
-
-summary(mlb_mixed)
-summary(nba_mixed)
-summary(nfl_mixed)
-```
 =======
 # Mixed Effects Model
 
@@ -788,5 +758,13 @@ summary(model_mlb)
 summary(model_nba)
 summary(model_nfl)
 ```
+#Interaction Model
+```{r}
+interaction_model <- lm(
+  perf_z ~ relative_salary_share * league,
+  data = combined
+)
 
->>>>>>> 552c578b1f3c8c4a81e2442b69ba867804758667
+summary(interaction_model)
+
+```
