@@ -536,7 +536,7 @@ nfl_cleaned %>%
   scale_color_manual(values = c(QB="#378ADD", RB="#BA7517", WR="#639922", TE="#9B59B6"),
                      guide = "none") +
   labs(
-    title   = "NFL: Inflation-Adjusted Salary vs. Total Offensive EPA by Position",
+    title   = "NFL: Comparing Salary to EPA by Position",
     subtitle = "(2013–2023)",
     x       = "Inflation-Adjusted Salary (In Millions $)",
     y       = "Total Offensive EPA"
@@ -572,7 +572,7 @@ mlb_cleaned %>%
   geom_point(alpha = 0.2, color = "#BA7517") +
   geom_smooth(method = "lm", color = "black", se = TRUE) +
   labs(
-    title = "MLB: Inflation-Adjusted Salary vs. WAR",
+    title = "MLB: Salary and WAR Performance",
     subtitle = "(2013–2023)",
     x     = "Inflation-Adjusted Salary (In Millions $)",
     y     = "WAR"
@@ -608,7 +608,7 @@ nba_cleaned %>%
   geom_point(alpha = 0.2, color = "#639922") +
   geom_smooth(method = "lm", color = "black", se = TRUE) +
   labs(
-    title = "NBA: Inflation-Adjusted Salary vs. Win Shares",
+    title = "NBA: Salary and Win Shares",
     subtitle = "(2013–2023)",
     x     = "Inflation-Adjusted Salary (In Millions $)",
     y     = "Win Shares"
